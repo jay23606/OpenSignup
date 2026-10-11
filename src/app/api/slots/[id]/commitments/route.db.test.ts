@@ -111,6 +111,7 @@ describe('POST /api/slots/[id]/commitments (db)', () => {
   it('remembers a sign-up for a slot 200 days away until a week after it', async () => {
     const slotAt = new Date(Date.now() + 200 * DAY * 1000);
     const { payload, maxAge, entries } = await signUp(await newSlot(slotAt));
+    expect(payload.data.commitment).not.toHaveProperty('editTokenHash');
     const weekAfterSlot = Math.floor(slotAt.getTime() / 1000) + 7 * DAY;
     expect(entries).toEqual([
       {

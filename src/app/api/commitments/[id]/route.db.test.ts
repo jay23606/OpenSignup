@@ -167,6 +167,7 @@ describe('/api/commitments/[id] (db)', () => {
     const payload = await res.json();
     expect(payload.data.id).toBe(c.id);
     expect(payload.data.participantName).toBe('Route Tester');
+    expect(payload.data).not.toHaveProperty('editTokenHash');
   });
 
   it('GET accepts the token from the x-edit-token header', async () => {
@@ -201,6 +202,7 @@ describe('/api/commitments/[id] (db)', () => {
     });
     const res = await PATCH(req, ctx);
     expect(res.status).toBe(200);
+    expect((await res.json()).data).not.toHaveProperty('editTokenHash');
     const [row] = await fx.db
       .select({ notes: commitments.notes })
       .from(commitments)
@@ -242,6 +244,7 @@ describe('/api/commitments/[id] (db)', () => {
     expect(res.status).toBe(200);
     const payload = await res.json();
     const moved = payload.data;
+    expect(moved).not.toHaveProperty('editTokenHash');
     expect(moved.id).not.toBe(c.id);
     expect(moved.slotId).toBe(target.value.id);
     expect(moved.moved).toBeUndefined();
