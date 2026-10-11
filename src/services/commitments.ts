@@ -30,7 +30,7 @@ import { inWorkspace, readLiveSignup } from './locks';
 import { listFieldsForSignup } from './slot-fields';
 
 type CommitmentRow = typeof commitments.$inferSelect;
-type PublicCommitmentRow = Omit<CommitmentRow, 'editTokenHash' | 'idempotencyKeyHash'>;
+type PublicCommitmentRow = ReturnType<typeof withoutServerOnlyHashes<CommitmentRow>>;
 /** A commitment with who made it. `participantEmail` is null when they gave none. */
 type OwnCommitment = PublicCommitmentRow & {
   participantName: string;
@@ -216,9 +216,7 @@ export async function commitToSlot(
 async function commitParticipantToSlot(
   db: Queryable,
   slotId: string,
-  who:
-    | { email: string | null; participantId?: never }
-    | { participantId: string; email?: never },
+  who: { email: string | null; participantId?: never } | { participantId: string; email?: never },
   data: Pick<CommitmentCreateInput, 'notes' | 'quantity'> & {
     name?: string;
     idempotencyKeyHash?: string;
