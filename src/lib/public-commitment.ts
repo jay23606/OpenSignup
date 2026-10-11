@@ -1,7 +1,13 @@
-/** The edit-token hash is the server's check value, so it never leaves the server. */
-export function withoutEditTokenHash<T extends { editTokenHash: string }>(
+/** Server-only commitment check values never leave the server. */
+export function withoutServerOnlyHashes<
+  T extends { editTokenHash: string; idempotencyKeyHash: string | null },
+>(
   row: T,
-): Omit<T, 'editTokenHash'> {
-  const { editTokenHash: _editTokenHash, ...publicRow } = row;
+): Omit<T, 'editTokenHash' | 'idempotencyKeyHash'> {
+  const {
+    editTokenHash: _editTokenHash,
+    idempotencyKeyHash: _idempotencyKeyHash,
+    ...publicRow
+  } = row;
   return publicRow;
 }

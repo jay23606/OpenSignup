@@ -16,7 +16,7 @@ import { log } from '@/lib/log';
 import { summarizeSlotValues } from '@/lib/slot-summary';
 import { parseInputSafe } from '@/lib/parse';
 import { requireWorkspaceWrite, type Actor } from '@/lib/policy';
-import { withoutEditTokenHash } from '@/lib/public-commitment';
+import { withoutServerOnlyHashes } from '@/lib/public-commitment';
 import { err, ok, type Result } from '@/lib/result';
 import { editTokenFor, hashToken, idempotencyKeyHash, verifyHash } from '@/lib/token';
 import {
@@ -30,7 +30,7 @@ import { inWorkspace, readLiveSignup } from './locks';
 import { listFieldsForSignup } from './slot-fields';
 
 type CommitmentRow = typeof commitments.$inferSelect;
-type PublicCommitmentRow = Omit<CommitmentRow, 'editTokenHash'>;
+type PublicCommitmentRow = Omit<CommitmentRow, 'editTokenHash' | 'idempotencyKeyHash'>;
 /** A commitment with who made it. `participantEmail` is null when they gave none. */
 type OwnCommitment = PublicCommitmentRow & {
   participantName: string;
@@ -276,7 +276,7 @@ async function commitParticipantToSlot(
         .limit(1);
       if (earlier) {
         return ok({
-          commitment: withoutEditTokenHash(earlier),
+          commitment: withoutServerOnlyHashes(earlier),
           editToken: editTokenFor(earlier.id),
           signupSlug: signupRow.slug,
           slotAt: slot.slotAt,
@@ -473,7 +473,7 @@ async function commitParticipantToSlot(
     });
 
     return ok({
-      commitment: withoutEditTokenHash(row),
+      commitment: withoutServerOnlyHashes(row),
       editToken,
       signupSlug: signupRow.slug,
       slotAt: slot.slotAt,
@@ -514,7 +514,7 @@ export async function getOwnCommitment(
     return err(serviceError('forbidden', 'invalid edit token'));
   }
   return ok({
-    ...withoutEditTokenHash(found.c),
+    ...withoutServerOnlyHashes(found.c),
     participantName: found.pname,
     participantEmail: found.pemail,
     signupSlug: found.slug,
@@ -554,7 +554,7 @@ export async function getOwnCommitmentsForSignup(
     if (!token) continue;
     if (!verifyHash(token, row.c.editTokenHash)) continue;
     out.push({
-      ...withoutEditTokenHash(row.c),
+      ...withoutServerOnlyHashes(row.c),
       participantName: row.pname,
       participantEmail: row.pemail,
     });
@@ -848,7 +848,7 @@ export async function updateOwnCommitment(
       eventType: 'commitment.updated',
       payload: { commitmentId, changed: Object.keys(data) },
     });
-    return ok(withoutEditTokenHash(updated));
+    return ok(withoutServerOnlyHashes(updated));
   });
 }
 
