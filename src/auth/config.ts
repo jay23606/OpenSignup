@@ -7,12 +7,12 @@ import { getEmailTransport } from '@/email';
 import { MagicLinkEmail } from '@/email/templates/magic-link';
 import { recordActivityBestEffort } from '@/lib/activity';
 import { getEnv } from '@/lib/env';
-import { log } from '@/lib/log';
 import { normalizeEmail } from '@/schemas/common';
 import { SignupAdapter } from './adapter';
 import { buildOAuthProviders } from './oauth-providers';
 import { canonicalizeMagicLinkUrl, buildConfirmationUrl } from './magic-link-url';
 import { extractEmailDomain } from './email-domain';
+import { authLogger } from './logger';
 import { getMagicLinkMaxAgeSeconds } from './magic-link-expiry';
 import { consumeMagicLinkRateLimits } from './magic-link-rate-limit';
 import { getCurrentRequestIp } from './request-context';
@@ -30,6 +30,7 @@ function buildConfig(): NextAuthConfig {
     adapter: SignupAdapter(),
     session: { strategy: 'database', maxAge: SESSION_MAX_AGE_SECONDS },
     trustHost: true,
+    logger: authLogger,
     providers: [
       Nodemailer({
         // `server` and `from` are required by the Nodemailer provider but unused —
@@ -75,7 +76,6 @@ function buildConfig(): NextAuthConfig {
             html,
             text,
           });
-          log.info({ email: identifier }, 'magic link dispatched');
           await recordActivityBestEffort(getDb(), {
             actor: { actorId: null, actorType: 'system' },
             eventType: 'auth.magic_link_sent',
